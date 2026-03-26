@@ -21,7 +21,9 @@ const limitIP = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limitIP);
+if (process.env.NODE_ENV !== 'test') {
+  app.use(limitIP);
+}
 
 // Traceability Context
 app.use(contextMiddleware);
@@ -45,16 +47,18 @@ app.use(limitWallet);
 app.use(express.json());
 
 // Routes
-if (process.env.NODE_ENV === 'development') { // TODO not deployed yet
-  app.use(deployRouter);
-  app.use(siteRouter);
-}
+app.use(deployRouter);
+app.use(siteRouter);
 app.use(healthRouter);
 
 // Global Error Handler
 app.use(errorHandler);
 
 // Start the server
-app.listen(PORT, () => {
-  logger.info(`x402 Hosting Service running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    logger.info(`x402 Hosting Service running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  });
+}
+
+export default app;
