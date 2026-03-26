@@ -1,5 +1,5 @@
 import { ListObjectsV2Command, PutObjectCommand, DeleteObjectsCommand, ObjectIdentifier } from '@aws-sdk/client-s3';
-import { r2, BUCKET_NAME } from '../config.js';
+import { r2, BUCKET_NAME, R2_BUCKET_ENDPOINT } from '../config.js';
 
 export interface SiteMetadata {
   wallet: string;
@@ -37,7 +37,7 @@ export const deploySite = async (walletAddress: string, files: Express.Multer.Fi
   await Promise.all(uploadPromises);
 
   return {
-    url: `https://deploy.your-service.com/${walletAddress}/latest/index.html`,
+    url: `${R2_BUCKET_ENDPOINT}/${walletAddress}/latest/index.html`,
     message: 'Site deployed successfully'
   };
 };

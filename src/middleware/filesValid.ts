@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Middleware to validate a site deployment upload.
+ * Middleware to validate a site deployment uploadMulter.
  * It checks:
  * 1. That at least one file is provided.
  * 2. That the total size of all files does not exceed the 10 MB limit.
  * 
- * Must run AFTER multer middleware (e.g. upload.array()).
+ * Must run AFTER multer middleware (e.g. uploadMulter.array()).
  */
-export const validateDeploymentUpload = (req: Request, res: Response, next: NextFunction) => {
+export const validateFilesToDeploy = (req: Request, res: Response, next: NextFunction) => {
   const files = req.files as Express.Multer.File[];
 
   if (!files || files.length === 0) {
@@ -21,6 +21,9 @@ export const validateDeploymentUpload = (req: Request, res: Response, next: Next
   if (totalSize > MAX_TOTAL_SIZE) {
     return res.status(400).json({ error: 'Site size exceeds 10 MB limit' });
   }
+
+  // TODO: Content moderation?
+  // TODO: index.html exists?
 
   next();
 };

@@ -12,6 +12,7 @@ import path from 'path';
 // Configurations
 export const PORT = process.env.PORT || 3000;
 export const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'pub';
+export const R2_BUCKET_ENDPOINT = process.env.R2_BUCKET_ENDPOINT || 'https://pub-16f72a58e1774585bd52a4eec4cfb020.r2.dev';
 export const RECEIVE_WALLET_ADDRESS = process.env.RECEIVE_WALLET_ADDRESS;
 export const FACILITATOR_URL = process.env.FACILITATOR_URL;
 // TODO network as a global env variable
@@ -27,12 +28,10 @@ if (!FACILITATOR_URL) {
 }
 
 const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
-
-// Initialize x402 Server with SIWX Extensions
 export const x402Server = new x402ResourceServer(facilitator)
   .register("eip155:8453", new ExactEvmScheme())
   .registerExtension(siwxResourceServerExtension)
-  .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind
+  .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind? test that the extension works anyway
 
 export const r2 = new S3Client({
   region: 'auto',
@@ -43,13 +42,11 @@ export const r2 = new S3Client({
   },
 });
 
-const storage = multer.memoryStorage();
-const allowedExts = /\.(html|css|js|json|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|txt|md)$/i;
-
-export const upload = multer({
-  storage,
+export const uploadMulter = multer({
+  storage: multer.memoryStorage(),
   limits: { files: 50 },
   fileFilter: (req, file, cb) => {
+    const allowedExts = /\.(html|css|js|json|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|txt|md)$/i;
     const extname = allowedExts.test(path.extname(file.originalname).toLowerCase());
     if (extname) {
       return cb(null, true);
