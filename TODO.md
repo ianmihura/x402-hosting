@@ -4,10 +4,10 @@ Must have:
     siwx
     multer
     x402 middleware (full e2e with testnet) setup testnet payments
-- test e2e with anvil
+- test e2e with anvil:
+    - no mocking: should actually get the file to r2
 - site expiry define (business)
-- nice readme
-- fix helmet
+    https://developers.cloudflare.com/r2/buckets/object-lifecycles/
 
 Extra points:
 - Analytics or visitor tracking

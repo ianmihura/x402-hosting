@@ -1,5 +1,4 @@
 import express from 'express';
-import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { logger } from './lib/logger.js';
 import { PORT } from './config.js';
@@ -14,7 +13,6 @@ import { walletMiddleware } from './middleware/wallet.js';
 const app = express();
 
 // Security and Rate Limiting
-// app.use(helmet()); // TODO why this does not work?
 const limitIP = rateLimit({
   windowMs: 1000, // 1 sec
   max: 1,         // requests per windowMs
