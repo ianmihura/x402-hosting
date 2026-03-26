@@ -12,12 +12,12 @@ import path from 'path';
 // Configurations
 export const PORT = process.env.PORT || 3000;
 export const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'pub';
-export const MY_WALLET_ADDRESS = process.env.MY_WALLET_ADDRESS;
+export const RECEIVE_WALLET_ADDRESS = process.env.RECEIVE_WALLET_ADDRESS;
 export const FACILITATOR_URL = process.env.FACILITATOR_URL;
 // TODO network as a global env variable
 
-if (!MY_WALLET_ADDRESS) {
-  logger.error("MY_WALLET_ADDRESS missing");
+if (!RECEIVE_WALLET_ADDRESS) {
+  logger.error("RECEIVE_WALLET_ADDRESS missing");
   process.exit(1);
 }
 

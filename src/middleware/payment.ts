@@ -6,7 +6,7 @@ import {
   declareSIWxExtension,
   createSIWxRequestHook
 } from '@x402/extensions/sign-in-with-x';
-import { MY_WALLET_ADDRESS, x402Server } from '../config.js';
+import { RECEIVE_WALLET_ADDRESS, x402Server } from '../config.js';
 import { siwxStorage } from '../lib/siwx.js';
 
 /**
@@ -17,7 +17,7 @@ const routes = {
     methods: ['POST'],
     accepts: [{
       scheme: 'exact',
-      payTo: MY_WALLET_ADDRESS!,
+      payTo: RECEIVE_WALLET_ADDRESS!,
       price: '$0.01',
       network: 'eip155:8453' as const, // Base Mainnet
     }],

@@ -4,8 +4,6 @@ Must have:
     - setup testnet payments
     - unit
     - integration
-- nice OOP
-    - separate transport layer from R2 layer from logic layer
 - site expiry define
 - nice readme
 
@@ -19,7 +17,7 @@ Extra points:
 - Custom domains / CNAME support
 - Site renewal payments (just expiry for now)
 - gracefull shutdown
-- gracefull site expiry
+- gracefull site expiry (business logic)
 
 Nice to have:
 - nice homescreen in the /index.html

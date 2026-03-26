@@ -9,26 +9,40 @@ import healthRouter from './routes/health.js';
 import { contextMiddleware } from './middleware/context.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { x402Middleware } from './middleware/payment.js';
+import { walletMiddleware } from './middleware/wallet.js';
 
 const app = express();
 
 // Security and Rate Limiting
 // app.use(helmet()); // TODO why this does not work?
-const limiter = rateLimit({ // roughly 1 request per second
+const limitIP = rateLimit({
   windowMs: 1000, // 1 sec
   max: 1,         // requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
-// TODO limit 1 request per second per wallet
+app.use(limitIP);
 
 // Traceability Context
 app.use(contextMiddleware);
 
+// Global Authentication
+app.use(x402Middleware);
+
+// Verified Identity Context
+app.use(walletMiddleware);
+
+const limitWallet = rateLimit({
+  windowMs: 1000, // 1 sec
+  max: 1,         // requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.wallet || '',
+});
+app.use(limitWallet);
+
 // Middleware
 app.use(express.json());
-app.use(x402Middleware);
 
 // Routes
 app.use(deployRouter);
