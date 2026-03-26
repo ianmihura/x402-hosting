@@ -22,8 +22,5 @@ export const validateFilesToDeploy = (req: Request, res: Response, next: NextFun
     return res.status(400).json({ error: 'Site size exceeds 10 MB limit' });
   }
 
-  // TODO: Content moderation?
-  // TODO: index.html exists?
-
   next();
 };
