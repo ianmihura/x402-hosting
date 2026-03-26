@@ -1,0 +1,37 @@
+{
+  "name": "x402-hosting",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon --exec node --loader ts-node/esm src/index.ts",
+    "build": "tsc",
+    "prod": "NODE_ENV=production node dist/index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "latest",
+    "@x402/core": "^2.8.0",
+    "@x402/evm": "^2.8.0",
+    "@x402/express": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "multer": "latest",
+    "pino": "^10.3.1",
+    "uuid": "^13.0.0",
+    "viem": "^2.47.6"
+  },
+  "devDependencies": {
+    "@types/express": "latest",
+    "@types/jest": "latest",
+    "@types/multer": "latest",
+    "@types/node": "latest",
+    "@types/uuid": "latest",
+    "jest": "latest",
+    "nodemon": "latest",
+    "ts-jest": "latest",
+    "ts-node": "latest",
+    "typescript": "latest"
+  }
+}
