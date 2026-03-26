@@ -1,9 +1,8 @@
 Must have:
-- make sure 4xx error have correct instructions
-- test
-    - setup testnet payments
-    - unit
-    - integration
+- test: integration: third party things:
+        siwx
+        multer
+        x402 middleware (full e2e with testnet) setup testnet payments
 - site expiry define
 - nice readme
 

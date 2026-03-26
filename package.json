@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon --exec node --loader ts-node/esm src/index.ts",
     "build": "tsc",
-    "prod": "NODE_ENV=production node dist/index.js"
+    "prod": "NODE_ENV=production node dist/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "latest",
@@ -27,6 +29,7 @@
     "@types/multer": "latest",
     "@types/node": "latest",
     "@types/uuid": "latest",
+    "aws-sdk-client-mock": "^4.1.0",
     "jest": "latest",
     "nodemon": "latest",
     "pino-pretty": "latest",
