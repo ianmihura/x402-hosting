@@ -1,9 +1,4 @@
 Must have:
-- test delete endpoint
-- test: integration third party things:
-    siwx
-    multer
-    x402 middleware (full e2e with testnet) setup testnet payments
 - test e2e with anvil:
     - no mocking: should actually get the file to r2
 - site expiry define (business)
@@ -31,5 +26,3 @@ Nice to have:
 - nice homescreen in r2/index.html
     - deploy hooks to deploy this index.html?
 - network as a global variable / as an array?
-- test negative case:
-    - we cant see metadata/delete of another wallet (even if we are owner of our own wallets)

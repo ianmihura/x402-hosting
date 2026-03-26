@@ -50,7 +50,9 @@ export const uploadMulter = multer({
     if (extname) {
       return cb(null, true);
     } else {
-      return cb(new Error('File type not allowed.'));
+      const error: any = new Error('File type not allowed. Only web formats (html, css, js, etc.) are permitted.');
+      error.status = 400;
+      return cb(error);
     }
   }
 });
