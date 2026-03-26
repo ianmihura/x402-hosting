@@ -4,7 +4,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "NODE_ENV=development nodemon --exec node --loader ts-node/esm src/index.ts",
+    "dev": "NODE_ENV=development nodemon --exec node --loader ts-node/esm --trace-warnings src/index.ts",
     "build": "tsc",
     "prod": "NODE_ENV=production node dist/index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
