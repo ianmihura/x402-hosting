@@ -45,8 +45,10 @@ app.use(limitWallet);
 app.use(express.json());
 
 // Routes
-app.use(deployRouter);
-app.use(siteRouter);
+if (process.env.NODE_ENV === 'development') { // TODO not deployed yet
+  app.use(deployRouter);
+  app.use(siteRouter);
+}
 app.use(healthRouter);
 
 // Global Error Handler
