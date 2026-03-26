@@ -41,7 +41,9 @@ const limitWallet = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => req.wallet || '',
 });
-app.use(limitWallet);
+if (process.env.NODE_ENV !== 'test') {
+  app.use(limitWallet);
+}
 
 // Middleware
 app.use(express.json());

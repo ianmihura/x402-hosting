@@ -16,18 +16,25 @@ declare global {
  * Should be used AFTER the x402Middleware.
  */
 export const walletMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const walletAddress = req.header('x-payment-sender');
+  let walletAddress = req.header('x-payment-sender') || (res.getHeader('x-payment-sender') as string) || (req as any).auth?.payer || (req as any).x402?.payer;
 
-  // if (!walletAddress) {
-  //   // If we've reached here but have no wallet, we return 400.
-  //   // In a properly structured app, this shouldn't happen for protected routes because x402Middleware
-  //   // would have already handled the missing payment/auth (returning 402).
-  //   return res.status(400).json({ 
-  //     error: 'No wallet provided', 
-  //     instruction: 'This endpoint requires an x402 payment or SIWX proof. Please include a valid x402 payment payload in your request headers.'
-  //   });
-  // }
+  if (!walletAddress && req.header('sign-in-with-x')) {
+    try {
+      const siwx = JSON.parse(Buffer.from(req.header('sign-in-with-x')!, 'base64').toString());
+      walletAddress = siwx.address;
+    } catch { }
+  }
 
-  req.wallet = walletAddress;
-  next();
+  if (!walletAddress) {
+    // If we've reached here but have no wallet, we return 400.
+    // In a properly structured app, this shouldn't happen for protected routes because x402Middleware
+    // would have already handled the missing payment/auth (returning 402).
+    return res.status(400).json({
+      error: 'No wallet provided',
+      instruction: 'This endpoint requires an x402 payment or SIWX proof. Please include a valid x402 payment payload in your request headers.'
+    });
+  } else {
+    req.wallet = walletAddress;
+    next();
+  }
 };

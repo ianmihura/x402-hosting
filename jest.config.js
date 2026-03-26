@@ -12,5 +12,8 @@ export default {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
   setupFiles: ['<rootDir>/tests/setup.ts'],
 };

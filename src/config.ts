@@ -29,8 +29,8 @@ if (!FACILITATOR_URL) {
 const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 export const x402Server = new x402ResourceServer(facilitator)
   .register("eip155:8453", new ExactEvmScheme())
-  .registerExtension(siwxResourceServerExtension)
-  .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind? test that the extension works anyway
+  .registerExtension(siwxResourceServerExtension);
+// .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind? test that the extension works anyway
 
 export const r2 = new S3Client({
   region: 'auto',
