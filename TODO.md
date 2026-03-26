@@ -1,13 +1,12 @@
+Must have:
 - make sure 4xx error have correct instructions
 - test
     - setup testnet payments
     - unit
     - integration
-- nice homescreen in the /index.html
-    - deploy hooks to deploy this index.html?
-- should we use viem for verifying sig?
 - nice OOP
-- gracefull shutdown
+    - separate transport layer from R2 layer from logic layer
+- site expiry define
 
 Extra points:
 - Analytics or visitor tracking
@@ -18,3 +17,9 @@ Extra points:
 - Password-protected sites
 - Custom domains / CNAME support
 - Site renewal payments (just expiry for now)
+- gracefull shutdown
+- gracefull site expiry
+
+Nice to have:
+- nice homescreen in the /index.html
+    - deploy hooks to deploy this index.html?

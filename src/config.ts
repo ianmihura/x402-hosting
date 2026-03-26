@@ -4,6 +4,8 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { x402ResourceServer } from '@x402/express';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { siwxResourceServerExtension, createSIWxSettleHook } from '@x402/extensions/sign-in-with-x';
+import { siwxStorage } from './lib/siwx.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -12,6 +14,7 @@ export const PORT = process.env.PORT || 3000;
 export const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'pub';
 export const MY_WALLET_ADDRESS = process.env.MY_WALLET_ADDRESS;
 export const FACILITATOR_URL = process.env.FACILITATOR_URL;
+// TODO network as a global env variable
 
 if (!MY_WALLET_ADDRESS) {
   logger.error("MY_WALLET_ADDRESS missing");
@@ -24,8 +27,12 @@ if (!FACILITATOR_URL) {
 }
 
 const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
-export const x402Server = new x402ResourceServer(facilitator);
-x402Server.register("eip155:8453", new ExactEvmScheme());
+
+// Initialize x402 Server with SIWX Extensions
+export const x402Server = new x402ResourceServer(facilitator)
+  .register("eip155:8453", new ExactEvmScheme())
+  .registerExtension(siwxResourceServerExtension)
+  .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind
 
 export const r2 = new S3Client({
   region: 'auto',
@@ -36,16 +43,12 @@ export const r2 = new S3Client({
   },
 });
 
-// TODO can we do this w/o third party lib?
 const storage = multer.memoryStorage();
 const allowedExts = /\.(html|css|js|json|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|txt|md)$/i;
 
 export const upload = multer({
   storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // TODO max size per file or total?
-    files: 50
-  },
+  limits: { files: 50 },
   fileFilter: (req, file, cb) => {
     const extname = allowedExts.test(path.extname(file.originalname).toLowerCase());
     if (extname) {

@@ -1,63 +1,51 @@
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../lib/logger.js';
-import { paymentMiddleware } from '@x402/express';
-import { verifyMessage } from 'viem';
+import {
+  paymentMiddlewareFromHTTPServer,
+  x402HTTPResourceServer
+} from '@x402/express';
+import {
+  declareSIWxExtension,
+  createSIWxRequestHook
+} from '@x402/extensions/sign-in-with-x';
 import { MY_WALLET_ADDRESS, x402Server } from '../config.js';
-
-// Extend Express Request type to include wallet
-declare global {
-  namespace Express {
-    interface Request {
-      wallet?: string;
-    }
-  }
-}
+import { siwxStorage } from '../lib/siwx.js';
 
 /**
- * Standard x402 payment middleware for the hosting service.
- * Enforces a $0.01 USDC payment on Base Mainnet.
+ * Route configurations for protected endpoints using x402 + SIWX.
  */
-export const requirePayment = paymentMiddleware({
-  accepts: {
-    scheme: 'exact',
-    payTo: MY_WALLET_ADDRESS!,
-    price: '$0.01',
-    network: 'eip155:8453', // Base Mainnet
+const routes = {
+  '/deploy': {
+    methods: ['POST'],
+    accepts: [{
+      scheme: 'exact',
+      payTo: MY_WALLET_ADDRESS!,
+      price: '$0.01',
+      network: 'eip155:8453' as const, // Base Mainnet
+    }],
+    extensions: declareSIWxExtension({
+      statement: 'Sign-in to deploy your AI agent site and prove ownership.',
+    }),
   },
-  // TODO add testnets
-}, x402Server);
+  '/site': {
+    methods: ['GET', 'DELETE'],
+    accepts: [], // Auth-only: no payment required if previously proven
+    extensions: declareSIWxExtension({
+      network: 'eip155:8453', // Required for auth-only
+      statement: 'Sign-in to manage your deployed site.',
+      expirationSeconds: 300,
+    }),
+  },
+};
 
 /**
- * Middleware to verify request ownership via message signature.
- * Used for non-payment actions like GET metadata or DELETE.
+ * x402 HTTP Resource Server instance.
+ * Combined with createSIWxRequestHook to allow access to returning users without re-payment.
  */
-export const requireOwnership = async (req: Request, res: Response, next: NextFunction) => {
-  const signature = req.header('x-payment-signature') as `0x${string}`;
-  const walletAddress = req.header('x-payment-sender') as `0x${string}`;
+const httpServer = new x402HTTPResourceServer(x402Server, routes as any)
+  .onProtectedRequest(createSIWxRequestHook({
+    storage: siwxStorage,
+  }));
 
-  // The message being signed. For simplicity in MVP, we might sign the URL or a custom message.
-  // TODO should include a nonce or timestamp to prevent replay attacks.
-  const message = req.header('x-payment-message') || req.originalUrl;
-
-  if (!signature || !walletAddress) {
-    return res.status(401).json({ error: "Signature and wallet address required for ownership proof" });
-  }
-
-  try {
-    const isValid = await verifyMessage({
-      address: walletAddress,
-      message,
-      signature,
-    });
-
-    if (!isValid) {
-      return res.status(403).json({ error: "Invalid signature" });
-    }
-
-    req.wallet = walletAddress;
-    next();
-  } catch (error) {
-    logger.error(error, "Signature verification error");
-    res.status(403).json({ error: "Signature verification failed" });
-  }
-};
+/**
+ * Global x402 middleware for the Express application.
+ */
+export const x402Middleware = paymentMiddlewareFromHTTPServer(httpServer);

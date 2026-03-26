@@ -8,24 +8,27 @@ import siteRouter from './routes/site.js';
 import healthRouter from './routes/health.js';
 import { contextMiddleware } from './middleware/context.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { x402Middleware } from './middleware/payment.js';
 
 const app = express();
 
 // Security and Rate Limiting
-// app.use(helmet());
-const limiter = rateLimit({ // TODO adjust this: roughly 1 request per second
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 1000 requests per windowMs
+// app.use(helmet()); // TODO why this does not work?
+const limiter = rateLimit({ // roughly 1 request per second
+  windowMs: 1000, // 1 sec
+  max: 1,         // requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use(limiter);
+// TODO limit 1 request per second per wallet
 
 // Traceability Context
 app.use(contextMiddleware);
 
 // Middleware
 app.use(express.json());
+app.use(x402Middleware);
 
 // Routes
 app.use(deployRouter);
