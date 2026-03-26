@@ -29,6 +29,7 @@
     "@types/uuid": "latest",
     "jest": "latest",
     "nodemon": "latest",
+    "pino-pretty": "latest",
     "ts-jest": "latest",
     "ts-node": "latest",
     "typescript": "latest"

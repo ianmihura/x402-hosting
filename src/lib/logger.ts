@@ -6,7 +6,7 @@ export const logger = pino({
     // attach requestId to every log object
     return { requestId: getRequestId() };
   },
-  // transport: process.env.NODE_ENV === 'development' ? {
-  //   target: 'pino-pretty',
-  // } : undefined,
+  transport: process.env.NODE_ENV === 'development' ? {
+    target: 'pino-pretty',
+  } : undefined,
 });

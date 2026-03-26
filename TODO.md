@@ -7,6 +7,7 @@ Must have:
 - nice OOP
     - separate transport layer from R2 layer from logic layer
 - site expiry define
+- nice readme
 
 Extra points:
 - Analytics or visitor tracking
