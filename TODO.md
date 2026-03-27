@@ -17,8 +17,6 @@ Extra points:
     - in filesValidate
     - check index.html exists
 - API discoverability
-- SIWX storage correctness:
-    - make sure re-deployments are not possible
 
 Nice to have:
 - nice homescreen in render/index.html
