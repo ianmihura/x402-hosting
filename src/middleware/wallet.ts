@@ -18,11 +18,16 @@ declare global {
 export const walletMiddleware = (req: Request, res: Response, next: NextFunction) => {
   let walletAddress = req.header('x-payment-sender') || (res.getHeader('x-payment-sender') as string) || (req as any).auth?.payer || (req as any).x402?.payer;
 
+  // Fallback to extracting from the SIWX header if not already settled/extracted by x402
   if (!walletAddress && req.header('sign-in-with-x')) {
     try {
-      const siwx = JSON.parse(Buffer.from(req.header('sign-in-with-x')!, 'base64').toString());
+      const rawSiwx = req.header('sign-in-with-x')!;
+      const b64 = rawSiwx.includes(' ') ? rawSiwx.split(' ')[1] : rawSiwx;
+      const siwx = JSON.parse(Buffer.from(b64, 'base64').toString());
       walletAddress = siwx.address;
-    } catch { }
+    } catch {
+      // Silently fail if formatting doesn't match
+    }
   }
 
   if (!walletAddress) {
