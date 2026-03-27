@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { logger } from './lib/logger.js';
-import { S3Client } from '@aws-sdk/client-s3';
+
 import { x402ResourceServer } from '@x402/express';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -11,8 +11,8 @@ import path from 'path';
 
 // Configurations
 export const PORT = process.env.PORT || 3000;
-export const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'pub';
-export const R2_BUCKET_ENDPOINT = process.env.R2_BUCKET_ENDPOINT || 'https://pub-16f72a58e1774585bd52a4eec4cfb020.r2.dev';
+export { BUCKET_NAME, R2_BUCKET_ENDPOINT, r2 } from './lib/r2.js';
+
 export const RECEIVE_WALLET_ADDRESS = process.env.RECEIVE_WALLET_ADDRESS;
 export const FACILITATOR_URL = process.env.FACILITATOR_URL;
 
@@ -25,21 +25,13 @@ if (!FACILITATOR_URL) {
   logger.error("FACILITATOR_URL missing");
   process.exit(1);
 }
+logger.info({ FACILITATOR_URL }, "Using facilitator");
 
 const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 export const x402Server = new x402ResourceServer(facilitator)
   .register("eip155:8453", new ExactEvmScheme())
-  .registerExtension(siwxResourceServerExtension);
-// .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage })); // TODO maybe dont need this bind? test that the extension works anyway
-
-export const r2 = new S3Client({
-  region: 'auto',
-  endpoint: process.env.R2_ENDPOINT!,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
+  .registerExtension(siwxResourceServerExtension)
+  .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage }));
 
 export const uploadMulter = multer({
   storage: multer.memoryStorage(),

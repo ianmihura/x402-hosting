@@ -1,7 +1,8 @@
 import {
   paymentMiddlewareFromHTTPServer,
-  x402HTTPResourceServer
+  x402HTTPResourceServer,
 } from '@x402/express';
+import { RouteConfig } from '@x402/core/server'
 import {
   declareSIWxExtension,
   createSIWxRequestHook
@@ -12,9 +13,8 @@ import { siwxStorage } from '../lib/siwx.js';
 /**
  * Route configurations for protected endpoints using x402 + SIWX.
  */
-const routes = {
+export const routes: Record<string, RouteConfig> = {
   '/deploy': {
-    methods: ['POST'],
     accepts: [{
       scheme: 'exact',
       payTo: RECEIVE_WALLET_ADDRESS!,
@@ -26,7 +26,6 @@ const routes = {
     }),
   },
   '/site': {
-    methods: ['GET', 'DELETE'],
     accepts: [], // Auth-only: no payment required if previously proven
     extensions: declareSIWxExtension({
       network: 'eip155:8453', // Required for auth-only
@@ -40,10 +39,31 @@ const routes = {
  * x402 HTTP Resource Server instance.
  * Combined with createSIWxRequestHook to allow access to returning users without re-payment.
  */
-const httpServer = new x402HTTPResourceServer(x402Server, routes as any)
+const httpServer = new x402HTTPResourceServer(x402Server, routes)
   .onProtectedRequest(createSIWxRequestHook({
     storage: siwxStorage,
   }));
+// .onProtectedRequest(async (req, ctx) => {
+//   // 1. Run the standard SIWX request hook (verifies identity and proof)
+//   const hook = createSIWxRequestHook({ storage: siwxStorage });
+//   const response = await (hook as any)(req, ctx);
+
+//   // If the hook returned a response (error/challenge), we stop here.
+//   if (response) return response;
+
+//   // 2. Identity is proven (available in req.wallet if walletMiddleware ran).
+//   // If the SIWX hook is satisfied, we check if it is already paid.
+//   const wallet = (req as any).wallet || (req as any).auth?.payer;
+//   if (wallet) {
+//     const isPaid = await siwxStorage.hasPaid(req.path, wallet);
+//     if (isPaid) {
+//       // Return a special grantAccess response to tell x402 to bypass "accepts"
+//       return { grantAccess: true } as any;
+//     }
+//   }
+
+//   return undefined;
+// });
 
 /**
  * Global x402 middleware for the Express application.

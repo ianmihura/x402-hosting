@@ -1,5 +1,5 @@
 import { ListObjectsV2Command, PutObjectCommand, DeleteObjectsCommand, ObjectIdentifier } from '@aws-sdk/client-s3';
-import { r2, BUCKET_NAME, R2_BUCKET_ENDPOINT } from '../config.js';
+import { r2, BUCKET_NAME, R2_BUCKET_ENDPOINT } from './../lib/r2.js';
 
 export interface SiteMetadata {
   wallet: string;

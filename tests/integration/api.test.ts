@@ -55,11 +55,11 @@ describe('x402-hosting API Integration Tests', () => {
       // Ensure we format the info correctly to sign
       const completeInfo: CompleteSIWxInfo = {
         ...siwxExt.info,
-        address: wallet.address,
+        address: walletAddress,
         chainId: 'eip155:8453',
         type: 'eip191',
         domain: siwxExt.info.domain || 'localhost',
-        uri: siwxExt.info.uri || 'http://localhost/deploy'
+        uri: siwxExt.info.uri || `${serverUrl}/deploy`
       };
 
       // 2. Sign the SIWX message
@@ -72,12 +72,16 @@ describe('x402-hosting API Integration Tests', () => {
 
       // 3. Mock the R2 Client
       s3Mock.on(PutObjectCommand).resolves({});
+      s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] }); // Start with empty R2
 
       // 4. Mock the x402 Facilitator response to handle both /verify and /v2/verify
       nock(process.env.FACILITATOR_URL!)
         .persist()
         .post(/verify/)
-        .reply(200, { success: true, payer: wallet.address });
+        .reply(200, (uri, requestBody) => {
+          console.log(`[Mock Facilitator] Hit: ${uri}`);
+          return { success: true, payer: walletAddress };
+        });
 
       // 5. Send the authenticated request
       // Note: Multer needs multipart/form-data
@@ -85,7 +89,7 @@ describe('x402-hosting API Integration Tests', () => {
         .post('/deploy')
         // Usually payment proof goes in x402-receipt or Authorization header. 
         // We simulate a verified payment by ensuring the facilitator returns success
-        .set('Authorization', 'L402 random-token')
+        .set('Authorization', 'L402 random-mockauth-receipt')
         .set('SIGN-IN-WITH-X', siwxHeader)
         .attach('files[]', Buffer.from('<html>test</html>'), 'index.html');
 
@@ -93,37 +97,44 @@ describe('x402-hosting API Integration Tests', () => {
       expect(deployResponse.body.success).toBe(true);
       expect(deployResponse.body.url).toContain(wallet.address);
 
-      // Verify storage mock calls
-      expect(s3Mock.calls().length).toBe(1);
+      // Verify storage mock calls: 1 List (hasPaid) + 1 Put (deploySite)
+      expect(s3Mock.calls().length).toBe(2);
+
     });
 
     it('should return 500 (or block) when providing an invalid file extension (Multer filter)', async () => {
       // We still need valid auth for x402 to even reach Multer
       const initResponse = await request(server).post('/deploy');
+      expect(initResponse.status).toBe(402);
       const paymentRequiredHeader = initResponse.headers['payment-required'] as string;
       const b64Data = paymentRequiredHeader.includes(' ') ? paymentRequiredHeader.split(' ')[1] : paymentRequiredHeader;
       const prData = JSON.parse(Buffer.from(b64Data, 'base64').toString());
       const siwxExt = prData.extensions['sign-in-with-x'];
+      expect(siwxExt).toBeDefined();
 
       const completeInfo: CompleteSIWxInfo = {
         ...siwxExt.info,
-        address: wallet.address,
+        address: walletAddress,
         chainId: 'eip155:8453',
         type: 'eip191',
         domain: siwxExt.info.domain || 'localhost',
-        uri: siwxExt.info.uri || 'http://localhost/deploy'
+        uri: siwxExt.info.uri || `${serverUrl}/deploy`
       };
 
       const payload = await createSIWxPayload(completeInfo, {
-        signMessage: async (args: { message: string }) => wallet.signMessage({ message: args.message }),
+        signMessage: async (args: { message: string, account?: unknown }) => wallet.signMessage({ message: args.message }),
         account: { address: wallet.address }
       });
       const siwxHeader = encodeSIWxHeader(payload);
 
+      // 3. Mock the R2 Client
+      s3Mock.on(PutObjectCommand).resolves({});
+      s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] }); // Start with empty R2
+
       // Try to attach a forbidden file type (.exe)
       const deployResponse = await request(server)
         .post('/deploy')
-        .set('Authorization', 'L402 random-token')
+        .set('Authorization', 'L402 random-mockauth-receipt')
         .set('SIGN-IN-WITH-X', siwxHeader)
         .attach('files[]', Buffer.from('malicious code'), 'virus.exe');
 
@@ -150,11 +161,11 @@ describe('x402-hosting API Integration Tests', () => {
 
       const completeInfo: CompleteSIWxInfo = {
         ...siwxExt.info,
-        address: wallet.address,
+        address: walletAddress,
         chainId: 'eip155:8453',
         type: 'eip191',
         domain: siwxExt.info.domain || 'localhost',
-        uri: siwxExt.info.uri || 'http://localhost/site'
+        uri: siwxExt.info.uri || `${serverUrl}/site`
       };
 
       const payload = await createSIWxPayload(completeInfo, {
@@ -203,11 +214,11 @@ describe('x402-hosting API Integration Tests', () => {
       const siwxExt = prData.extensions['sign-in-with-x'];
       const completeInfo: CompleteSIWxInfo = {
         ...siwxExt.info,
-        address: wallet.address,
+        address: walletAddress,
         chainId: 'eip155:8453',
         type: 'eip191',
         domain: siwxExt.info.domain || 'localhost',
-        uri: siwxExt.info.uri || 'http://localhost/site'
+        uri: siwxExt.info.uri || `${serverUrl}/site`
       };
       const payload = await createSIWxPayload(completeInfo, {
         signMessage: async (args: { message: string }) => wallet.signMessage({ message: args.message }),
@@ -226,12 +237,12 @@ describe('x402-hosting API Integration Tests', () => {
       // No, getSiteMetadata should be calling ListObjectsV2 with the CORRECT PREFIX.
       // Let's verify that even if S3 Mock is returns ALL, our implementation (which should filter by prefix)
       // only counts Wallet A's files IF we mock it to behave like a real S3 filtering by prefix.
-      
+
       // More correctly: we verify that the PREFIX sent to S3 is correct.
       const listCalls = s3Mock.commandCalls(ListObjectsV2Command);
       // The last call to ListObjectsV2 (which happened during responseA request)
       const lastCallArgs = listCalls[listCalls.length - 1].args[0].input as ListObjectsV2Command['input'];
-      
+
       expect(lastCallArgs.Prefix).toBe(`${wallet.address}/latest/`);
       expect(lastCallArgs.Prefix).not.toBe(`${secondWalletAddress}/latest/`);
     });
@@ -250,11 +261,11 @@ describe('x402-hosting API Integration Tests', () => {
 
       const completeInfo: CompleteSIWxInfo = {
         ...siwxExt.info,
-        address: wallet.address,
+        address: walletAddress,
         chainId: 'eip155:8453',
         type: 'eip191',
         domain: siwxExt.info.domain || 'localhost',
-        uri: siwxExt.info.uri || 'http://localhost/site'
+        uri: siwxExt.info.uri || `${serverUrl}/site`
       };
 
       const payload = await createSIWxPayload(completeInfo, {
