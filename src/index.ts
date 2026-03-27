@@ -20,7 +20,7 @@ const limitIP = rateLimit({
   legacyHeaders: false,
 });
 if (process.env.NODE_ENV !== 'test') {
-  app.use(limitIP);
+  // app.use(limitIP);
 }
 
 // Traceability Context
@@ -42,7 +42,7 @@ const limitWallet = rateLimit({
   keyGenerator: (req) => req.wallet || '',
 });
 if (process.env.NODE_ENV !== 'test') {
-  app.use(limitWallet);
+  // app.use(limitWallet);
 }
 
 // Middleware
