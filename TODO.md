@@ -1,8 +1,5 @@
 Must have:
-- test e2e with anvil:
-    - no mocking: should actually get the file to r2
-- site expiry define (business)
-    https://developers.cloudflare.com/r2/buckets/object-lifecycles/
+- architecture description
 
 Extra points:
 - Analytics or visitor tracking
@@ -19,6 +16,8 @@ Extra points:
 - content moderation:
     - in filesValidate
     - check index.html exists
+- site expiry define (business)
+    https://developers.cloudflare.com/r2/buckets/object-lifecycles/
 
 
 Nice to have:

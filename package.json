@@ -8,6 +8,7 @@
     "build": "tsc",
     "prod": "NODE_ENV=production node dist/index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:e2e": "anvil --port 8545 > /dev/null 2>&1 & sleep 3; node --experimental-vm-modules node_modules/jest/bin/jest.js tests/e2e/hosting.test.ts; PID=$(lsof -t -i:8545); if [ -n \"$PID\" ]; then kill $PID; fi",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@types/node": "latest",
     "@types/supertest": "^7.2.0",
     "@types/uuid": "latest",
+    "@viem/anvil": "^0.0.10",
     "aws-sdk-client-mock": "^4.1.0",
     "jest": "latest",
     "nock": "^14.0.11",
@@ -37,6 +39,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "latest",
     "ts-node": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "viem": "^2.47.6"
   }
 }
