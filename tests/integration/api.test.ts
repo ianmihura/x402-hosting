@@ -102,6 +102,62 @@ describe('x402-hosting API Integration Tests', () => {
 
     });
 
+    it('should successfully deploy when providing valid files in JSON format (Base64)', async () => {
+      // 1. Initial request to get the SIWX challenge
+      const initResponse = await request(server).post('/deploy');
+      const paymentRequiredHeader = initResponse.headers['payment-required'] as string;
+      const b64Data = paymentRequiredHeader.includes(' ') ? paymentRequiredHeader.split(' ')[1] : paymentRequiredHeader;
+      const prData = JSON.parse(Buffer.from(b64Data, 'base64').toString());
+      const siwxExt = prData.extensions['sign-in-with-x'];
+
+      const completeInfo: CompleteSIWxInfo = {
+        ...siwxExt.info,
+        address: walletAddress,
+        chainId: 'eip155:8453',
+        type: 'eip191',
+        domain: siwxExt.info.domain || 'localhost',
+        uri: siwxExt.info.uri || `${serverUrl}/deploy`
+      };
+
+      const payload = await createSIWxPayload(completeInfo, {
+        signMessage: async (args: { message: string, account?: unknown }) => wallet.signMessage({ message: args.message }),
+        account: { address: wallet.address }
+      });
+      const siwxHeader = encodeSIWxHeader(payload);
+
+      // 3. Mock the R2 Client
+      s3Mock.reset();
+      s3Mock.on(PutObjectCommand).resolves({});
+      s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] }); // Start with empty R2
+
+      // 4. Send the authenticated JSON request
+      const deployResponse = await request(server)
+        .post('/deploy')
+        .set('Authorization', 'L402 random-mockauth-receipt')
+        .set('SIGN-IN-WITH-X', siwxHeader)
+        .set('Content-Type', 'application/json')
+        .send({
+          files: [
+            {
+              name: 'index.html',
+              content: Buffer.from('<html>json test</html>').toString('base64'),
+              type: 'text/html'
+            }
+          ]
+        });
+
+      expect(deployResponse.status).toBe(200);
+      expect(deployResponse.body.success).toBe(true);
+      expect(deployResponse.body.url).toContain(wallet.address);
+
+      // Verify storage mock calls: 1 List (hasPaid) + 1 Put (deploySite)
+      expect(s3Mock.calls().length).toBe(2);
+      
+      const putCall = s3Mock.commandCalls(PutObjectCommand)[0];
+      expect(putCall.args[0].input.Body?.toString()).toBe('<html>json test</html>');
+    });
+
+
     it('should return 500 (or block) when providing an invalid file extension (Multer filter)', async () => {
       // We still need valid auth for x402 to even reach Multer
       const initResponse = await request(server).post('/deploy');
