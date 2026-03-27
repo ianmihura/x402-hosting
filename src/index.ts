@@ -26,6 +26,8 @@ if (process.env.NODE_ENV !== 'test') {
 // Traceability Context
 app.use(contextMiddleware);
 
+app.use(healthRouter);
+
 // Global Authentication
 app.use(x402Middleware);
 
@@ -49,7 +51,6 @@ app.use(express.json());
 // Routes
 app.use(deployRouter);
 app.use(siteRouter);
-app.use(healthRouter);
 
 // Global Error Handler
 app.use(errorHandler);
