@@ -6,6 +6,9 @@ description: Interaction guide for the x402-hosting API
 
 To interact with the x402-hosting service, agents must handle both the `multipart/form-data` file upload and the `x402` / SIWX authentication protocol.
 
+This is the base url:
+- https://x402-hosting.onrender.com/
+
 ## 1. Authentication (SIWX + X402)
 
 All protected endpoints (`/deploy`, `/site`) require proving identity via Ethereum signature and/or paying a micro-payment.
