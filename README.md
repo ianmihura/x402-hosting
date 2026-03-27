@@ -21,8 +21,9 @@ All protected endpoints use `HTTP 402 Payment Required` logic. If a payment or S
 
 Deploys a set of static files. 
 - **Payment**: Required for new sites or if the last deployment was > 30 days ago.
-- **Content-Type**: `multipart/form-data`
-- **Body**: Files should be uploaded in the `files[]` field (Max 50 files, 10MB total).
+- **Content-Type**: `multipart/form-data` OR `application/json` (Base64).
+- **Body**: Files should be uploaded in the `files[]` field (Multipart) or in a `files` array (JSON).
+- **Price**: $0.01 USDC on Base.
 
 **Example (cURL):**
 ```bash
@@ -33,6 +34,16 @@ curl -X POST http://localhost:3000/deploy \
   -F "files[]=@index.html" \
   -F "files[]=@style.css"
 ```
+
+**Example (cURL - JSON):**
+```bash
+curl -X POST http://localhost:3000/deploy \
+  -H "SIGN-IN-WITH-X: <base64_siwx_payload>" \
+  -H "Authorization: L402 <token>:<preimage>" \
+  -H "Content-Type: application/json" \
+  -d '{"files": [{"name": "index.html", "content": "PGh0bWw+...", "type": "text/html"}]}'
+```
+
 
 **Expected Result (200 OK):**
 ```json

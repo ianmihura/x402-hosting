@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { uploadMulter } from '../config.js';
+import { flexibleUpload } from '../middleware/flexibleUpload.js';
 import { validateFilesToDeploy } from '../middleware/filesValid.js';
 import { deploySite } from '../services/main.js';
 
@@ -7,9 +7,9 @@ const router = Router();
 
 /**
  * CREATE / UPDATE Endpoint
- * An agent sends files + payment -> gets back a live URL.
+ * An agent sends files (Multipart or JSON Base64) + payment -> gets back a live URL.
  */
-router.post('/deploy', uploadMulter.array('files[]', 50), validateFilesToDeploy, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+router.post('/deploy', flexibleUpload, validateFilesToDeploy, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const files = req.files as Express.Multer.File[];
   const result = await deploySite(req.wallet!, files);
 

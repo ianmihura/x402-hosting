@@ -32,8 +32,9 @@ All protected endpoints (`/deploy`, `/site`) require proving identity via Ethere
 
 ## 2. Deployment (POST /deploy)
 
-This endpoint creates or updates a site using files provided in a multipart form.
+This endpoint creates or updates a site. It supports both `multipart/form-data` and `application/json` (Base64).
 
+#### Option A: Multipart (Standard)
 - **Content-Type**: `multipart/form-data`
 - **Field Name**: `files[]` (use array notation)
 - **Allowed Extensions**: `.html`, `.css`, `.js`, `.json`, `.png`, `.jpg`, `.svg`, `.webp`, `.txt`, `.md`.
@@ -46,6 +47,30 @@ curl -X POST http://localhost:3000/deploy \
   -H "Authorization: L402 <token>:<preimage>" \
   -F "files[]=@index.html" \
   -F "files[]=@styles.css"
+```
+
+#### Option B: JSON Base64 (AI Friendly)
+- **Content-Type**: `application/json`
+- **Format**:
+  ```json
+  {
+    "files": [
+      {
+        "name": "index.html",
+        "content": "PGh0bWw+...",
+        "type": "text/html"
+      }
+    ]
+  }
+  ```
+
+### Example JSON Request using cURL:
+```bash
+curl -X POST http://localhost:3000/deploy \
+  -H "SIGN-IN-WITH-X: <base64_siwx_header>" \
+  -H "Authorization: L402 <token>:<preimage>" \
+  -H "Content-Type: application/json" \
+  -d '{"files": [{"name": "index.html", "content": "PGh0bWw+anNvbiB0ZXN0PC9odG1sPg==", "type": "text/html"}]}'
 ```
 
 ## 3. Site Management

@@ -46,7 +46,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Routes
 app.use(deployRouter);
