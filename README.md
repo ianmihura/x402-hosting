@@ -14,7 +14,13 @@ No accounts, no dashboards, no sign-up — just an API endpoint that accepts a p
 
 ## 📡 API Endpoints
 
-All protected endpoints use `HTTP 402 Payment Required` logic. If a payment or SIWX signature is missing, the server will return a `402` status with headers specifying the required proof.
+All protected endpoints use `HTTP 402 Payment Required` logic. If a payment or SIWX signature is missing, the server will return a `402` status with the following headers:
+
+| Header | Direction | Description |
+| --- | --- | --- |
+| `PAYMENT-REQUIRED` | Server → Client | Base64-encoded `PaymentRequired` object |
+| `PAYMENT-SIGNATURE` | Client → Server | Base64-encoded `PaymentPayload` object |
+| `PAYMENT-RESPONSE` | Server → Client | Base64-encoded `SettlementResponse` object |
 
 ### 1. Deploy / Update a Site
 `POST /deploy`
@@ -30,7 +36,7 @@ Deploys a set of static files.
 # First request returns 402 with SIWX challenge and Payment requirements
 curl -X POST http://localhost:3000/deploy \
   -H "SIGN-IN-WITH-X: <base64_siwx_payload>" \
-  -H "Authorization: L402 <token>:<preimage>" \
+  -H "PAYMENT-SIGNATURE: <base64_payment_payload>" \
   -F "files[]=@index.html" \
   -F "files[]=@style.css"
 ```
@@ -39,7 +45,7 @@ curl -X POST http://localhost:3000/deploy \
 ```bash
 curl -X POST http://localhost:3000/deploy \
   -H "SIGN-IN-WITH-X: <base64_siwx_payload>" \
-  -H "Authorization: L402 <token>:<preimage>" \
+  -H "PAYMENT-SIGNATURE: <base64_payment_payload>" \
   -H "Content-Type: application/json" \
   -d '{"files": [{"name": "index.html", "content": "PGh0bWw+...", "type": "text/html"}]}'
 ```

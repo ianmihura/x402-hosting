@@ -28,6 +28,15 @@ let R2_BUCKET_ENDPOINT: string;
 let server: any;
 let isAnvilRunning = false;
 
+const mockPaymentPayload = Buffer.from(JSON.stringify({
+  x402Version: 1,
+  accepted: {
+    scheme: 'exact',
+    network: 'eip155:8453',
+  },
+  receipt: 'random-mockauth-receipt'
+})).toString('base64');
+
 describe('E2E Hosting Full Lifecycle (Anvil + Real R2)', () => {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
@@ -78,9 +87,11 @@ describe('E2E Hosting Full Lifecycle (Anvil + Real R2)', () => {
     const serverUrl = `http://127.0.0.1:${port}`;
     const facilitatorUrl = process.env.FACILITATOR_URL!;
 
-    // --- Step 1: Upload without payment -> expect 402 ---
+    // --- Step 1: Upload without SIWX -> expect 402 with challenge ---
+    // Note: We MUST include the PAYMENT-SIGNATURE in the first request for deployments.
     const res1 = await request(server)
       .post('/deploy')
+      .set('PAYMENT-SIGNATURE', mockPaymentPayload)
       .attach('files[]', Buffer.from('<html><body>E2E TEST</body></html>'), 'index.html');
 
     expect(res1.status).toBe(402);
@@ -110,16 +121,35 @@ describe('E2E Hosting Full Lifecycle (Anvil + Real R2)', () => {
     });
     const siwxHeader = encodeSIWxHeader(payload);
 
-    // Mock Facilitator to verify payment successfully
+    // Mock Facilitator to verify and settle payment successfully
     nock(facilitatorUrl)
       .persist()
-      .post(/verify/)
-      .reply(200, { success: true, payer: account.address });
+      .post(/\/verify/)
+      .reply(200, (uri) => {
+        console.log(`[Mock Facilitator E2E] Hit: ${uri}`);
+        return {
+          isValid: true,
+          payer: account.address,
+        };
+      });
 
-    // --- Step 3: Upload with payment -> expect 200 SUCCESS ---
+    nock(facilitatorUrl)
+      .persist()
+      .post(/\/settle/)
+      .reply(200, (uri) => {
+        console.log(`[Mock Facilitator E2E] Hit: ${uri}`);
+        return {
+          success: true,
+          payer: account.address,
+          transaction: '0xmockhash-e2e',
+          network: 'eip155:8453',
+        };
+      });
+
+    // --- Step 3: Upload with both payment and SIWX -> expect 200 SUCCESS ---
     const res2 = await request(server)
       .post('/deploy')
-      .set('Authorization', 'L402 random-mockauth-receipt')
+      .set('PAYMENT-SIGNATURE', mockPaymentPayload)
       .set('SIGN-IN-WITH-X', siwxHeader)
       .attach('files[]', Buffer.from('<html><body>E2E SUCCESS</body></html>'), 'index.html')
       .attach('files[]', Buffer.from('body { background: white; }'), 'style.css');

@@ -17,6 +17,15 @@ const privateKey = generatePrivateKey();
 const wallet = privateKeyToAccount(privateKey);
 const walletAddress = wallet.address.toLowerCase(); // Often SIWx normalizes addresses
 
+const mockPaymentPayload = Buffer.from(JSON.stringify({
+  x402Version: 1,
+  accepted: {
+    scheme: 'exact',
+    network: 'eip155:8453',
+  },
+  receipt: 'random-mockauth-receipt',
+})).toString('base64');
+
 describe('x402-hosting API Integration Tests', () => {
   beforeAll(async () => {
     server = app.listen(0);
@@ -42,8 +51,11 @@ describe('x402-hosting API Integration Tests', () => {
     });
 
     it('should successfully deploy when providing valid files, SIWX, and mocked payment', async () => {
-      // 1. Initial request to get the SIWX challenge
-      const initResponse = await request(server).post('/deploy');
+      // 1. Initial request to get the SIWX challenge - now with payment!
+      const initResponse = await request(server)
+        .post('/deploy')
+        .set('PAYMENT-SIGNATURE', mockPaymentPayload);
+
       expect(initResponse.status).toBe(402);
       const paymentRequiredHeader = initResponse.headers['payment-required'] as string;
       const b64Data = paymentRequiredHeader.includes(' ') ? paymentRequiredHeader.split(' ')[1] : paymentRequiredHeader;
@@ -74,22 +86,36 @@ describe('x402-hosting API Integration Tests', () => {
       s3Mock.on(PutObjectCommand).resolves({});
       s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] }); // Start with empty R2
 
-      // 4. Mock the x402 Facilitator response to handle both /verify and /v2/verify
+      // 4. Mock the x402 Facilitator responses
       nock(process.env.FACILITATOR_URL!)
         .persist()
-        .post(/verify/)
-        .reply(200, (uri, requestBody) => {
+        .post(/\/verify/)
+        .reply(200, (uri) => {
           console.log(`[Mock Facilitator] Hit: ${uri}`);
-          return { success: true, payer: walletAddress };
+          return {
+            isValid: true,
+            payer: walletAddress,
+          };
+        });
+
+      nock(process.env.FACILITATOR_URL!)
+        .persist()
+        .post(/\/settle/)
+        .reply(200, (uri) => {
+          console.log(`[Mock Facilitator] Hit: ${uri}`);
+          return {
+            success: true,
+            payer: walletAddress,
+            transaction: '0xmockhash',
+            network: 'eip155:8453',
+          };
         });
 
       // 5. Send the authenticated request
       // Note: Multer needs multipart/form-data
       const deployResponse = await request(server)
         .post('/deploy')
-        // Usually payment proof goes in x402-receipt or Authorization header. 
-        // We simulate a verified payment by ensuring the facilitator returns success
-        .set('Authorization', 'L402 random-mockauth-receipt')
+        .set('PAYMENT-SIGNATURE', mockPaymentPayload)
         .set('SIGN-IN-WITH-X', siwxHeader)
         .attach('files[]', Buffer.from('<html>test</html>'), 'index.html');
 
@@ -133,7 +159,7 @@ describe('x402-hosting API Integration Tests', () => {
       // 4. Send the authenticated JSON request
       const deployResponse = await request(server)
         .post('/deploy')
-        .set('Authorization', 'L402 random-mockauth-receipt')
+        .set('PAYMENT-SIGNATURE', mockPaymentPayload)
         .set('SIGN-IN-WITH-X', siwxHeader)
         .set('Content-Type', 'application/json')
         .send({
@@ -152,13 +178,13 @@ describe('x402-hosting API Integration Tests', () => {
 
       // Verify storage mock calls: 1 List (hasPaid) + 1 Put (deploySite)
       expect(s3Mock.calls().length).toBe(2);
-      
+
       const putCall = s3Mock.commandCalls(PutObjectCommand)[0];
       expect(putCall.args[0].input.Body?.toString()).toBe('<html>json test</html>');
     });
 
 
-    it('should return 500 (or block) when providing an invalid file extension (Multer filter)', async () => {
+    it('should return 400 when providing an invalid file extension (Multer filter)', async () => {
       // We still need valid auth for x402 to even reach Multer
       const initResponse = await request(server).post('/deploy');
       expect(initResponse.status).toBe(402);
@@ -190,7 +216,7 @@ describe('x402-hosting API Integration Tests', () => {
       // Try to attach a forbidden file type (.exe)
       const deployResponse = await request(server)
         .post('/deploy')
-        .set('Authorization', 'L402 random-mockauth-receipt')
+        .set('PAYMENT-SIGNATURE', mockPaymentPayload)
         .set('SIGN-IN-WITH-X', siwxHeader)
         .attach('files[]', Buffer.from('malicious code'), 'virus.exe');
 

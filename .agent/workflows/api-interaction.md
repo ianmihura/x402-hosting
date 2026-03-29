@@ -11,7 +11,15 @@ This is the base url:
 
 ## 1. Authentication (SIWX + X402)
 
-All protected endpoints (`/deploy`, `/site`) require proving identity via Ethereum signature and/or paying a micro-payment.
+All protected endpoints (`/deploy`, `/site`) require proving identity via Ethereum signature and/or paying a micro-payment via the x402 protocol.
+
+### x402 Headers
+
+| Header | Direction | Description |
+| --- | --- | --- |
+| `PAYMENT-REQUIRED` | Server → Client | Base64-encoded `PaymentRequired` object |
+| `PAYMENT-SIGNATURE` | Client → Server | Base64-encoded `PaymentPayload` object |
+| `PAYMENT-RESPONSE` | Server → Client | Base64-encoded `SettlementResponse` object |
 
 ### SIWX Payload
 1. Construct a SIWX JSON payload:
@@ -44,7 +52,7 @@ This endpoint creates or updates a site. It supports both `multipart/form-data` 
 ```bash
 curl -X POST http://localhost:3000/deploy \
   -H "SIGN-IN-WITH-X: <base64_siwx_header>" \
-  -H "Authorization: L402 <token>:<preimage>" \
+  -H "PAYMENT-SIGNATURE: <base64_payment_payload>" \
   -F "files[]=@index.html" \
   -F "files[]=@styles.css"
 ```
@@ -68,7 +76,7 @@ curl -X POST http://localhost:3000/deploy \
 ```bash
 curl -X POST http://localhost:3000/deploy \
   -H "SIGN-IN-WITH-X: <base64_siwx_header>" \
-  -H "Authorization: L402 <token>:<preimage>" \
+  -H "PAYMENT-SIGNATURE: <base64_payment_payload>" \
   -H "Content-Type: application/json" \
   -d '{"files": [{"name": "index.html", "content": "PGh0bWw+anNvbiB0ZXN0PC9odG1sPg==", "type": "text/html"}]}'
 ```

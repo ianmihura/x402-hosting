@@ -35,7 +35,7 @@ describe('R2SIWxStorage', () => {
     it('should return true if payment is found in memory', async () => {
       const now = Date.now();
       storage.recordPayment(resource, walletAddress);
-      
+
       const result = await storage.hasPaid(resource, walletAddress);
       expect(result).toBe(true);
       expect(s3Mock.calls().length).toBe(0); // Should not call R2
@@ -70,12 +70,11 @@ describe('R2SIWxStorage', () => {
       expect(result).toBe(false);
     });
 
-    it('should return true for /deploy even if not in R2 (unblock settlement)', async () => {
+    it('should return false for /deploy if not in R2', async () => {
       s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] });
 
       const result = await storage.hasPaid(resource, walletAddress);
-      // It returns true to let core x402Middleware handle the settlement
-      expect(result).toBe(true);
+      expect(result).toBe(false);
     });
 
     it('should return false on S3 error (fallback to payment requirement)', async () => {
@@ -91,7 +90,7 @@ describe('R2SIWxStorage', () => {
       // 1. Initial check (not in memory, not in R2)
       s3Mock.on(ListObjectsV2Command).resolves({ Contents: [] });
       let result = await storage.hasPaid(resource, walletAddress);
-      expect(result).toBe(true); // Unblocked for settlement
+      expect(result).toBe(false);
       expect(s3Mock.calls().length).toBe(1);
 
       // 2. Record payment
