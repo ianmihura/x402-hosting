@@ -70,10 +70,7 @@ export class R2SIWxStorage implements SIWxStorage {
       return false;
     }
 
-    // Important: For payable routes like `/deploy`, we still return true here
-    // to unblock the extension. We want core x402 settlement to happen!
-    // If we return `false`, the SIWX extension returns 402 without allowing settlement.
-    return true;
+    return false;
   }
 
   recordPayment(resource: string, address: string): void {
