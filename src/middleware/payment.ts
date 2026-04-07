@@ -59,9 +59,8 @@ export const routes: Record<string, RouteConfig> = {
         output: {
           example: {
             success: true,
-            siteUrl: 'https://user-wallet.x402.site',
-            fileCount: 2,
-            totalSize: 1024
+            url: 'https://user-wallet.x402.site',
+            message: 'Site deployed successfully'
           }
         }
       })
