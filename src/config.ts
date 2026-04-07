@@ -5,6 +5,7 @@ import { x402ResourceServer } from '@x402/express';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { siwxResourceServerExtension, createSIWxSettleHook } from '@x402/extensions/sign-in-with-x';
+import { bazaarResourceServerExtension } from '@x402/extensions/bazaar';
 import { siwxStorage } from './lib/siwx.js';
 import multer from 'multer';
 import path from 'path';
@@ -31,6 +32,7 @@ const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
 export const x402Server = new x402ResourceServer(facilitator)
   .register("eip155:8453", new ExactEvmScheme())
   .registerExtension(siwxResourceServerExtension)
+  .registerExtension(bazaarResourceServerExtension)
   .onAfterSettle(createSIWxSettleHook({ storage: siwxStorage }));
 
 export const uploadMulter = multer({

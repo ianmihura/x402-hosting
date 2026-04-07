@@ -16,7 +16,6 @@ Extra points:
 - content moderation:
     - in filesValidate
     - check index.html exists
-- API discoverability
 
 Nice to have:
 - nice homescreen in render/index.html

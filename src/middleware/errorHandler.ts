@@ -12,19 +12,19 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   // In non-dev, we only show the message for client errors (4xx)
   const isClientError = statusCode >= 400 && statusCode < 500;
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'production') {
+    // sanitized response in prod
+    res.status(statusCode).json({
+      status: 'error',
+      message: isClientError ? err.message : 'Internal Server Error',
+      requestId,
+    });
+  } else {
     // useful info
     res.status(statusCode).json({
       status: 'error',
       message: err.message,
       stack: err.stack,
-      requestId,
-    });
-  } else {
-    // sanitized response in prod
-    res.status(statusCode).json({
-      status: 'error',
-      message: isClientError ? err.message : 'Internal Server Error',
       requestId,
     });
   }
